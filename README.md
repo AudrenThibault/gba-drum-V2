@@ -1,11 +1,8 @@
 # gba-drum
 
-This is a basic drum/pattern sequencer for the Nintendo GameBoy Advance.
-
-Tested on visualboyadvance and no$gba & on gba with various flash cartridges.
+This is a basic drum/pattern sequencer for the Nintendo GameBoy Advance. Compiled with devkit pro, using the libgba and maxmod libraries. Tested on visualboyadvance and no$gba & on actual gba with various flash cartridges.
 
 What works:
-
 -pattern sequencing & playback
 
 -song/chain sequencing & playback
