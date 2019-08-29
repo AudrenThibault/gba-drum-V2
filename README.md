@@ -22,3 +22,6 @@ What works:
 -copy/paste patterns and orders
 
 -random pattern generation
+
+Example videos:
+- https://www.youtube.com/watch?v=Em7cmhQgLh0
