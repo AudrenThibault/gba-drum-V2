@@ -23,5 +23,3 @@ What works:
 
 -random pattern generation
 
-Example videos:
-- https://www.youtube.com/watch?v=Em7cmhQgLh0
