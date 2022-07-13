@@ -32,7 +32,7 @@ What works:
 -random pattern generation
 
 
-Update Maz Hoot :
+Update Audren :
 
 - sync mode for Volcas with Y cable (all sounds are mono when it's activated)
 - b for random sample (randomise pan too) random a sample at each plays
