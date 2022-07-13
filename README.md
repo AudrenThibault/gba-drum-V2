@@ -1,10 +1,9 @@
 # gba-drum
 
-pour mettre un "o" dans le screen patern :
+## Create a file named maxmod_data with your .wav samples
 
-A + up (A + up + right s'il y a un bug de l'emulateur)
-
-Update : A
+put "o" : A  //sample
+put "R" : B  //random note
 
 Certaines combinaisons de touches sur emulateur peuvent poser problème, 
 dans ce cas modifier la touche select par une autre touche du clavier.
