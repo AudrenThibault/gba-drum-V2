@@ -99,11 +99,21 @@ export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
 					$(BMPFILES:.bmp=.o) \
 					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
  
+# LIBTONC	:= ../../tonclib
+
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) \
 					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-					-I$(CURDIR)/$(BUILD)
+					-I$(CURDIR)/$(BUILD) \
+					-I$(DEVKITPRO)/libtonc/include
  
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib) \
+					-L$(DEVKITPRO)/libtonc/lib
+
+# LIBTONC	:= ../../tonclib
+# TONCLUDE  := -I$(DEVKITPRO)/libtonc/include
+# LIBPATHS := -L$(DEVKITPRO)/libtonc/lib
+
+# LIBS    := -ltonc
 
 .PHONY: $(BUILD) clean
  
@@ -126,6 +136,7 @@ else
 #---------------------------------------------------------------------------------
 
 $(OUTPUT).gba	:	$(OUTPUT).elf
+#$(OUTPUT).nds	:	$(OUTPUT).elf
 
 $(OUTPUT).elf	:	$(OFILES)
 

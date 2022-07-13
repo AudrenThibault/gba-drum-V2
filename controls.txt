@@ -1,5 +1,8 @@
 //PATTERN SCREEN
 	
+	Mettre un o dans le screen patern : A + up + right (l'un après l'autre)
+	en fait non c'est a+ up mais bon au tout début ça marchait pas va savoir opurquoi
+	
 	A + LEFT / RIGHT = CHANGE PITCH
 	B + LEFT / RIGHT = CHANGE PAN
 	A + UP / DOWN = CHANGE VELOCITY
