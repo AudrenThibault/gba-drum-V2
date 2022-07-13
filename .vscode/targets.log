@@ -1,6 +1,4 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-make: *** No rule to make target 'all'.  Stop.
-
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -8,7 +6,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Jul 13 18:06:43 2022
+# Make data base, printed on Wed Jul 13 18:31:41 2022
 
 # Variables
 
@@ -161,7 +159,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 41807
+GIO_LAUNCHED_DESKTOP_FILE_PID = 48197
 # automatic
 %F = $(notdir $%)
 # makefile (from '/opt/devkitpro/devkitARM/base_tools', line 4)
@@ -284,6 +282,9 @@ MAKEFLAGS = pqrR
 MFLAGS = -pqrR
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
+ 
+make: *** No rule to make target 'all'.  Stop.
+
 # makefile (from '/opt/devkitpro/devkitARM/base_rules', line 6)
 PORTLIBS_PATH := /opt/devkitpro/portlibs
 # environment
@@ -302,7 +303,6 @@ DATA := font
 STRIP := arm-none-eabi-strip
 # environment
 HOMEBREW_REPOSITORY = /home/linuxbrew/.linuxbrew/Homebrew
- 
 # environment
 QT_ACCESSIBILITY = 1
 # makefile (from 'Makefile', line 69)
@@ -350,7 +350,7 @@ OFILES := r6502_portfont.bin.o r6502_portfont_original.bin.o soundbank.bin.o   d
 # environment
 LANG = C
 # environment
-VSCODE_PID = 41856
+VSCODE_PID = 48246
 # environment
 DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=e61eda8ab0e88bac15b65aac62ce652b
 # variable set hash-table stats:
@@ -364,12 +364,12 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=e61eda8ab0e88bac15b65aa
 
 # source (device 66311, inode 35915520): 3 files, no impossibilities.
 # /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/font (device 66311, inode 35915510): 4 files, no impossibilities.
-# . (device 66311, inode 35915406): 21 files, no impossibilities.
+# . (device 66311, inode 35915406): 19 files, no impossibilities.
 # font (device 66311, inode 35915510): 4 files, no impossibilities.
 # /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/source (device 66311, inode 35915520): 3 files, no impossibilities.
 # maxmod_data (device 66311, inode 35915517): 87 files, no impossibilities.
 
-# 122 files, no impossibilities in 6 directories.
+# 120 files, no impossibilities in 6 directories.
 
 # Implicit Rules
 
@@ -562,12 +562,13 @@ clean:
 # General ('VPATH' variable) search path:
 # /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/source:/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/font
 
-# strcache buffers: 1 (0) / strings = 147 / storage = 2028 B / avg = 13 B
-# current buf: size = 8162 B / used = 2028 B / count = 147 / avg = 13 B
+# strcache buffers: 1 (0) / strings = 145 / storage = 2006 B / avg = 13 B
+# current buf: size = 8162 B / used = 2006 B / count = 145 / avg = 13 B
 
-# strcache performance: lookups = 187 / hit rate = 21%
+# strcache performance: lookups = 185 / hit rate = 21%
+ 
 # hash-table stats:
-# Load=147/8192=2%, Rehash=0, Collisions=6/187=3%
-# Finished Make data base on Wed Jul 13 18:06:43 2022
+# Load=145/8192=2%, Rehash=0, Collisions=5/185=3%
+# Finished Make data base on Wed Jul 13 18:31:41 2022
 
  
