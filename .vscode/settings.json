@@ -3,6 +3,7 @@
     "files.associations": {
         "soundbank.h": "c",
         "stdio.h": "c",
-        "include.h": "c"
+        "include.h": "c",
+        "stdlib.h": "c"
     }
 }

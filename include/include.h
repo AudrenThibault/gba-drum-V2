@@ -35,7 +35,7 @@ void setup_interrupts(void);
 void setup_timers(void);
 void update_timers(void);
 
-void play_sound(int row, int sample, int vol, int tune, int pan);
+void play_sound(int row, int sample, int vol, int tune, int pan, int limitFx);
 void play_column(void) __attribute__ ((section(".iwram")));
 void set_status(int new_status);
 int find_chain_start(int index);

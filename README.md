@@ -1,5 +1,14 @@
 # gba-drum
 
+## Build :
+There must be wav files inside maxmod_data for compilation works
+make clean
+make
+
+Pour compiler avec libgba ET libtonc (pour avoir les samples ET les sons gameboy), j'ai fait PLEINS de modifs dans les dossier /opt/devkitpro/libgba/include et /opt/devkitpro/libtonc/include pour empêcher tous les conflits et autre
+
+Quand je veux inclure un truc, regarder si le fichier est pas déjà inclus via tonc_libgba.h qui est dans /opt/devkitpro/libtonc/include
+
 ## Create a file named maxmod_data with your .wav samples
 
 put "o" : A  //sample

@@ -1,6 +1,5 @@
 make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2'
- 
 [ -d build ] || mkdir -p build
 make BUILDDIR=`cd build && pwd` --no-print-directory -C build -f /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/Makefile
 make: Leaving directory '/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2'

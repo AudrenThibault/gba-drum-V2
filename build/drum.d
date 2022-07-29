@@ -1,5 +1,5 @@
 drum.o: \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/source/drum.c \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/source/drum.c \
  /opt/devkitpro/libgba/include/gba.h \
  /opt/devkitpro/libgba/include/gba_affine.h \
  /opt/devkitpro/libgba/include/gba_base.h \
@@ -18,12 +18,27 @@ drum.o: \
  /opt/devkitpro/libgba/include/gba_video.h \
  /opt/devkitpro/libgba/include/maxmod.h \
  /opt/devkitpro/libgba/include/mm_types.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/soundbank.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/soundbank_bin.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/r6502_portfont_bin.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/include.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/palette.h \
- /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/help.h
+ /opt/devkitpro/libtonc/include/tonc.h \
+ /opt/devkitpro/libtonc/include/tonc_types.h \
+ /opt/devkitpro/libtonc/include/tonc_memmap.h \
+ /opt/devkitpro/libtonc/include/tonc_memdef.h \
+ /opt/devkitpro/libtonc/include/tonc_bios.h \
+ /opt/devkitpro/libtonc/include/tonc_core.h \
+ /opt/devkitpro/libtonc/include/tonc_input.h \
+ /opt/devkitpro/libtonc/include/tonc_irq.h \
+ /opt/devkitpro/libtonc/include/tonc_math.h \
+ /opt/devkitpro/libtonc/include/tonc_oam.h \
+ /opt/devkitpro/libtonc/include/tonc_tte.h \
+ /opt/devkitpro/libtonc/include/tonc_surface.h \
+ /opt/devkitpro/libtonc/include/tonc_video.h \
+ /opt/devkitpro/libtonc/include/tonc_nocash.h \
+ /opt/devkitpro/libtonc/include/tonc_text.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/soundbank.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/soundbank_bin.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/r6502_portfont_bin.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/include.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/palette.h \
+ /home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/help.h
 /opt/devkitpro/libgba/include/gba.h:
 /opt/devkitpro/libgba/include/gba_affine.h:
 /opt/devkitpro/libgba/include/gba_base.h:
@@ -42,9 +57,24 @@ drum.o: \
 /opt/devkitpro/libgba/include/gba_video.h:
 /opt/devkitpro/libgba/include/maxmod.h:
 /opt/devkitpro/libgba/include/mm_types.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/soundbank.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/soundbank_bin.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/build/r6502_portfont_bin.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/include.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/palette.h:
-/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-maz-hoot/include/help.h:
+/opt/devkitpro/libtonc/include/tonc.h:
+/opt/devkitpro/libtonc/include/tonc_types.h:
+/opt/devkitpro/libtonc/include/tonc_memmap.h:
+/opt/devkitpro/libtonc/include/tonc_memdef.h:
+/opt/devkitpro/libtonc/include/tonc_bios.h:
+/opt/devkitpro/libtonc/include/tonc_core.h:
+/opt/devkitpro/libtonc/include/tonc_input.h:
+/opt/devkitpro/libtonc/include/tonc_irq.h:
+/opt/devkitpro/libtonc/include/tonc_math.h:
+/opt/devkitpro/libtonc/include/tonc_oam.h:
+/opt/devkitpro/libtonc/include/tonc_tte.h:
+/opt/devkitpro/libtonc/include/tonc_surface.h:
+/opt/devkitpro/libtonc/include/tonc_video.h:
+/opt/devkitpro/libtonc/include/tonc_nocash.h:
+/opt/devkitpro/libtonc/include/tonc_text.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/soundbank.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/soundbank_bin.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/build/r6502_portfont_bin.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/include.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/palette.h:
+/home/thibault/Documents/TRAVAIL/sites/applisMusique/HOMEBREWS/gba/drum_sequencer_gba_de_github/gba-drum-V2/include/help.h:

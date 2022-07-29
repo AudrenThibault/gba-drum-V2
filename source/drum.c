@@ -28,7 +28,9 @@
 #include <gba.h>
 #include <maxmod.h>
 #include <stdio.h>
-//#include <tonc.h>
+
+#include <tonc.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include "soundbank.h"
@@ -39,6 +41,48 @@
 #include "palette.h"
 #include "help.h"
 
+
+//pour sons gameboy
+// #include <tonc_memmap.h>
+// #include <gba_dma.h>
+// #include <gba_interrupt.h>
+// #include <tonc_bios.h>
+// #include <gba_input.h>
+// //#include <gba_video.h>
+// #include <tonc_legacy.h>
+// #include <tonc_memdef.h>
+// #include <tonc_tte.h>
+// #include <tonc_memmap.h>
+// #include <tonc_bios.h>
+
+typedef enum
+{
+ NOTE_C=0, NOTE_CIS, NOTE_D, NOTE_DIS,
+ NOTE_E, NOTE_F, NOTE_FIS, NOTE_G,
+ NOTE_GIS, NOTE_A, NOTE_BES, NOTE_B
+} eSndNoteId;
+
+// const int note_table[] = { 
+// NOTE_C=0, NOTE_CIS, NOTE_D, NOTE_DIS,
+//  NOTE_E, NOTE_F, NOTE_FIS, NOTE_G,
+//  NOTE_GIS, NOTE_A, NOTE_BES, NOTE_B 
+// }
+
+//sons gameboy
+BG0_ON = BIT(8);		/*!< enable background 0			*/
+// Rates for traditional notes in octave +5
+const u32 __snd_rates[12]=
+{
+ 8013, 7566, 7144, 6742, // C , C#, D , D#
+ 6362, 6005, 5666, 5346, // E , F , F#, G
+ 5048, 4766, 4499, 4246 // G#, A , A#, B
+};
+#define SND_RATE(note, oct) ( 2048-(__snd_rates[note]>>(4+(oct))) )
+
+#define SCREEN_BASE(m)		((m) << 8)
+#define RGB8(r,g,b)			( ((r)>>3) | (((g)>>3)<<5) | (((b)>>3)<<10) )
+
+// fin pour sons gameboy
 
 #define MAPADDRESS		MAP_BASE_ADR(31)	// our base map address
 #define SCREEN_BUFFER  ((u16 *) 0x6000000)
@@ -65,6 +109,21 @@
 
 u8 play = PLAY_STOPPED;
 int play_next = NO_PATTERN;
+
+//jouer les notes gameboy
+#define CLR_GREEN			0x0200
+#define CLR_ORANGE			0x021F
+
+// IWRAM_CODE void memset32(void *dst, u32 wd, uint wdcount);
+
+// #define SBB_CLEAR_ROW(sbb, row)		\
+// 	memset32(&se_mem[sbb][(row)*32], 0, 32/2)
+
+u8 txt_scrolly= 8;
+//pour test
+const char *names[]=
+{	"C ", "C#", "D ", "D#", "E ", "F ", "F#", "G ", "G#", "A ", "A#", "B "	};
+// fin jouer les notes gameboy
 
 //loop modes
 #define SONG_MODE		0
@@ -193,6 +252,12 @@ typedef struct {
 	u8 pan; 		//128= normal, 0=left, 255=right
 	u8 random;
 	u8 activeNote;
+	u8 noteGameboy;
+	u8 stepping;
+	u8 stepNoise;
+	u8 notePlay;
+	u8 octave;
+	u8 limitEffect1;
 } pattern_row; 
 
 typedef struct {
@@ -216,6 +281,8 @@ typedef struct channel {
 	u8 pitch;
 	u8 pan;
 	u8 status;
+	u8 notePlay;
+	u8 limitEffect1;
 } channel;
  
 typedef struct song {
@@ -274,6 +341,24 @@ int IALimit = 28;
 int bpmFolies[] = { 10, -20, 30, -10, 20, -30 }; 
 int valueBpmFolies = 0;
 int randBpmFolies = 0;
+int changeNote = 1;
+int octave = 0;
+int pitchN = 0;
+int freqR = 0;
+int duties[] = {
+	SSQR_DUTY1_8, SSQR_DUTY1_4, SSQR_DUTY1_2,
+	SSQR_DUTY3_4
+};
+int dutyChoose = 0;
+int duty1 = false;
+int duty2 = false;
+int noteApresDuty = 0;
+// int reinitialiseNote = false;
+// int duty = 1; //20
+// int arpeggiator = 0;
+// int arpegg1 = 0;
+// int arpegg2 = 0;
+// int arpegg3 = 0;
 
 
 // REG_SND1FREQ = 0;
@@ -283,8 +368,202 @@ int randBpmFolies = 0;
 
 char string_buff[50];
 
+// static inline void SetMode(int mode)	{REG_DISPCNT = mode;}
+
+
 void set_bpm_to_millis(){
 	millis_between_ticks = (int) (((1.0f/(current_song->bpm/60.0f))/0.0001f)/4)/6;
+}
+
+void snd_playSoundOnChannel4(u16 volume, u16 envdir, u16 envsteptime, u16 soundlength,
+        u16 loopmode, u8 output, u16 shiftFreq, u16 stepping, u8 freqRatio, u8 transpose) 
+{
+	if (stepping == 0) {
+		stepping += 10;
+	}
+    REG_SOUND4CNT_L = (volume << 12) | (envdir << 11) | (envsteptime << 8) | soundlength;
+
+    REG_SOUND4CNT_H = 0x8000 | (loopmode << 14) | (shiftFreq << 4) | (stepping << 3) | freqRatio;
+    REG_SOUND4CNT_H = (REG_SOUND4CNT_H & 0xF800) | (loopmode << 14) | (shiftFreq << 4) | (stepping << 3) | freqRatio;
+}
+
+//note pu1
+void snd_playSoundOnChannel1(u8 note, u8 octave, u8 limitEffect1) 
+{
+	// REG_SOUND1CNT_L = (volume << 12) | (envdir << 11) | (envsteptime << 8) | soundlength;
+
+    // REG_SOUND1CNT_H = 0x8000 | (loopmode << 14) | (shiftFreq << 4) | (stepping << 3) | freqRatio;
+    // REG_SOUND1CNT_H = (REG_SOUND4CNT_H & 0xF800) | (loopmode << 14) | (shiftFreq << 4) | (stepping << 3) | freqRatio;
+	
+	int dureeSon = 1; //c'était à 7 au début. 0 = infini, 1 = très court
+	int vol = 12; //ou enveloppe
+	int decay = 0; //mais ça marche pas, utiliser dureeSon
+
+	// pattern_row *pv;
+	// pv = &(current_song->patterns[current_pattern_index].columns[cursor_x].rows[cursor_y]);
+
+	if (note > 11 && note < 24) {
+		noteApresDuty = note - 12;
+		dutyChoose = 1;
+	} else if (note <= 11) {
+		noteApresDuty = note;
+		dutyChoose = 0;
+	} else if (note >= 24 && note < 36) {
+		noteApresDuty = note - 24;
+		dutyChoose = 2;
+	} else if (note >= 36 && note < 48) {
+		noteApresDuty = note - 36;
+		dutyChoose = 3;
+	} else if (note > 47 && note < 100) { //on repart à 0
+		// noteApresDuty = note - 48;
+		// dutyChoose = 0;
+		//autre condition?
+	} 
+	// else if (note > 100) { //255 c'est note < 0
+	// 	noteApresDuty = note - 208; //on revient à 47
+	// 	pv->notePlay = 47;
+	// 	sprintf(string_buff, "??? %d ", note);
+	// 	put_string(string_buff,0,0,0);
+	// }
+
+
+	int duty = duties[dutyChoose]; //duty texture du son, voir SSQR_DUTY1_2
+
+	// sprintf(string_buff, "note %d ", note);
+	// put_string(string_buff,0,0,0);
+
+	//REG_SND1FREQ = 0;
+	//REG_SND1SWEEP = 0;
+	REG_SND1CNT= SSQR_ENV_BUILD(vol, decay, dureeSon) | duty;
+	REG_SND1FREQ = SFREQ_RESET | SND_RATE(noteApresDuty, octave);
+
+	// sprintf(string_buff, "duty %d", duty);
+	// put_string(string_buff,0,1,1);
+	//ticks = current_song->shuffle;
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	// if (pas == 1) {
+	// 		if (arpeggiator == 0) {
+	// 			if (arpegg1 == 0) {
+	// 				// if (pas == 2) {
+	// 					REG_SND2FREQ = SFREQ_RESET | SND_RATE(note+2, octave);
+	// 					sprintf(string_buff, "caca");
+	// 					put_string(string_buff,0,2,1);
+	// 				// }
+	// 				arpegg1++;
+	// 			}
+	// 			if (arpegg2 == 0) {
+
+	// 				arpegg2++;
+	// 			}
+	// 			arpeggiator++;
+	// 		}
+	// 	// }
+	// }
+	
+	// sprintf(string_buff, "pas : %d", pas);
+	// put_string(string_buff,0,2,1);
+}
+
+//play_sound sound_play gameboy
+void gb_note_play(int note, int octave, int limitEffect1)
+{
+	//sans ça, y'a pas de son!
+	REG_SOUNDCNT_L = 0xff77;
+    REG_SOUNDCNT_H = 0xbb0e;
+
+	//ça n'affiche rien ici mais si on le met pas
+	//l'octave grave marche pas, bizarre...
+	// sprintf(string_buff, "oct : %d", octave);
+	// put_string(string_buff,0,2,1);
+
+	// sprintf(string_buff, "note : %d", note);
+	// put_string(string_buff,0,1,1);
+	//valeurs bien stepping : de 4 à 21
+
+	snd_playSoundOnChannel1(note, octave, limitEffect1);
+    
+}
+
+void gb_noise_play(stepping, stepNoise)
+{	
+	//channel 4 noise
+	// REG_SND4FREQ = SFREQ_RESET | SND_RATE(note, octave);
+
+	// REG_SOUNDCNT_X = 0x80;
+
+	//sans ça, y'a pas de son!
+	REG_SOUNDCNT_L = 0xff77;
+    REG_SOUNDCNT_H = 0xbb0e;
+
+	// REG_SOUND4CNT_L = 0xff77;
+    // REG_SOUND4CNT_H = 0xbb0e;
+	//valeurs bien stepping : de 4 à 21
+
+	if (pitchN > 6) {
+		pitchN = 0;
+	}
+	if (freqR > 6) {
+		freqR = 0;
+	}
+	
+
+	// sprintf(string_buff, "stepping %d ", stepping);
+	// put_string(string_buff,0,0,0);
+
+	// sprintf(string_buff, "pitchN %d ", pitchN);
+	// put_string(string_buff,0,1,0);
+	// sprintf(string_buff, "freqR %d ", freqR);
+	// put_string(string_buff,0,18,0);
+	// sprintf(string_buff, "stepNoise %d ", stepNoise);
+	// put_string(string_buff,0,19,0);
+
+	// if (pitchN > 7) {
+	// 	pitchN = 0;
+	// }
+	// if (freqR > 4) {
+	// 	pitchN = 0;
+	// }
+
+	const int noiseSoundArray[3][10] = {
+		{15,1,7,47,1,3,0,0,0,15},
+		{15,1,7,47,1,3,5,0,0,0},
+		{15,1,7,47,1,3,0,0,0,15}
+	};
+
+	int volumeNoise; // 15, //volume de 0 à F
+	int enveloppeDirection; // 7, Direction de l'enveloppe
+	int pasEnveloppe; //pas de l'enveloppe de 0 à 7 (??)
+	int dureeSon; // 47, //durée du son 0 à 3f (attention valeur inversée: 3f = court) ACTIF seulement si loopmode = 1
+	int loopMode; //timed 1, continuous 0
+	int panNoise; //0 PAS DE SON / 1 GAUCHE / 2 DROITE / 3 GAUCHE ET DROITE
+	int pitchNoise; //de 0 à 7
+	int steppingBis; //de 4 à 21
+	int freqRation; //de 0 à 4
+	int transposeNoise; //sert à rien
+
+	int numeroSon = 1;
+
+	volumeNoise = noiseSoundArray[numeroSon][0];
+	enveloppeDirection = noiseSoundArray[numeroSon][1];
+	pasEnveloppe = noiseSoundArray[numeroSon][2];
+	dureeSon = noiseSoundArray[numeroSon][3];
+	loopMode = noiseSoundArray[numeroSon][4];
+	panNoise = noiseSoundArray[numeroSon][5];
+	// pitchNoise = noiseSoundArray[numeroSon][6];
+	pitchNoise = pitchN;
+	// pitchNoise = 0;
+	steppingBis = stepping;
+	// freqRation = noiseSoundArray[numeroSon][8];
+	freqRation = freqR;
+	// freqRation = 0;
+	transposeNoise = noiseSoundArray[numeroSon][9];
+
+	snd_playSoundOnChannel4(
+        volumeNoise, enveloppeDirection, pasEnveloppe, 
+		dureeSon, loopMode, panNoise, pitchNoise,
+		steppingBis, freqRation, transposeNoise 
+	);
 }
 
 int set_shuffle(){
@@ -556,37 +835,32 @@ void paste_order(short *to){
 	}
 }
 
-// Play a note and show which one was played
-// void note_play(int note, int octave)
-// {
-	// Clear next top and current rows
-	// SBB_CLEAR_ROW(31, (txt_scrolly/8-2)&31);
-	// SBB_CLEAR_ROW(31, txt_scrolly/8);	
-
-	// Display note and scroll
-	//tte_printf("#{P:16,%d;cx:0}%-2s%+2d", txt_scrolly, names[note], octave);
-	//se_puts(16, txt_scrolly, str, 0);
-
-	//txt_scrolly -= 8;
-	//REG_BG0VOFS= txt_scrolly-8;
-
-	// Play the actual note
-	// REG_SND1FREQ = SFREQ_RESET | SND_RATE(note, octave);
-// }
-
-void play_sample(row, sample, vol, pitch, pan) {
-	if (sample != SFX_SYNC) {
-		mm_sound_effect sfx = {
-			{sample} ,			// id
-			(int)(1.0f * (pitch)),	// rate
-			0,		// handle
-			vol,	// volume
-			pan,	// panning
-		};
+void play_sample(row, sample, vol, pitch, pan, limitEffect1) {
 	
-		active_sounds[row] = mmEffectEx(&sfx); //mmeffect returns mmhandler into the array
-		//amb = mmEffectEx(&sfx); //mmeffect returns mmhandler into the array
+	if (row == 3) {
+		//sample = pv->stepping
+		//pitch = pv->stepNoise
+		gb_noise_play(sample, pitch); //ligne 890
+	} else if (row == 4) {
+		// sprintf(string_buff, "notePlay %d ", sample);
+		// put_string(string_buff,0,0,0);
+		// sample = pv->notePlay
+		// pitch = pv->octave
+		gb_note_play(sample, pitch, limitEffect1);
+	} else {
+		if (sample != SFX_SYNC) {
+			mm_sound_effect sfx = {
+				{sample} ,			// id
+				(int)(1.0f * (pitch)),	// rate
+				0,		// handle
+				vol,	// volume
+				pan,	// panning
+			};
+		
+			active_sounds[row] = mmEffectEx(&sfx); //mmeffect returns mmhandler into the array
+		}
 	}
+
 }
 
 void play_sample_sync(row, sample) {
@@ -600,7 +874,7 @@ void play_sample_sync(row, sample) {
 	active_sounds[row] = mmEffectEx(&sfx); //mmeffect returns mmhandler into the array
 }
 
-void play_sound(int row, int sample, int vol, int pitch, int pan){
+void play_sound(int row, int sample, int vol, int pitch, int pan, int limitFx){
 	if (active_sounds[row]){ 				//if theres a sound playing in that row
 		mmEffectCancel(active_sounds[row]); //cancel it before trigging it again
 	}
@@ -614,9 +888,16 @@ void play_sound(int row, int sample, int vol, int pitch, int pan){
 				pan = 0; //j'écrase pan
 			}
 			//break out into function set_effect_params?
-			play_sample(row, sample, vol, pitch, pan);
+			play_sample(row, sample, vol, pitch, pan, limitFx);
 		}
-	} else { //row est = à 11
+	} else if (row == 3) { // noise sound
+		//j'envoie pv->stepping (sample) et pv->stepNoise (pitch)
+		play_sample(row, sample, vol, pitch, pan, limitFx);
+	} else if (row == 4) {
+		//j'envoie pv->notePlay (sample) et pv->octave (pitch)
+		play_sample(row, sample, vol, pitch, pan, limitFx);	
+	}
+	else { //row est = à 11
 		if (current_song->sync_mode == 6) {
 			// if (typeOfSyncs == 0) { //Volca
 				play_sample_sync(row, SFX_SYNC);
@@ -628,7 +909,7 @@ void play_sound(int row, int sample, int vol, int pitch, int pan){
 			// 	play_sample_sync(row, SFX_SYNCWOLF);
 			// }
 		} else {
-			play_sample(row, sample, vol, pitch, pan);
+			play_sample(row, sample, vol, pitch, pan, limitFx);
 		}
 	}
 }
@@ -738,13 +1019,8 @@ void play_column(){
 			}
 		}
 
-		// if (row == 0) {
-		// play note hardware de la gba
-		// const u8 notes[6]= { 0x02, 0x05, 0x12,  0x02, 0x05, 0x12 };
-		// note_play(notes[1]&1, notes[1]>>4);
 
-
-
+		
 		// random perso
 		if (pv->random == true) // R
 		{
@@ -758,49 +1034,127 @@ void play_column(){
 			sampleRandom, 
 			current_song->channels[row].volume, 
 			pitch_table[12], //1024 = pitch normal
-			panRandom);
+			panRandom,
+			pv->limitEffect1);
 
 		// les autres modes que random (o et O)
 		} else if (val == 1) { // o
-			play_sound(row, 
-			current_song->channels[row].sample, 
-			current_song->channels[row].volume, 
-			pitch_table[pitch], 
-			pan);
+			if (row == 3) {
+				play_sound(row, 
+				pv->stepping, 
+				current_song->channels[row].volume, 
+				pv->stepNoise,
+				pan,
+				pv->limitEffect1);
+			} else if (row == 4) {
+				play_sound(row, 
+				pv->notePlay, 
+				current_song->channels[row].volume, 
+				pv->octave,
+				pan,
+				pv->limitEffect1);
+			} else {
+				play_sound(row, 
+				current_song->channels[row].sample, 
+				current_song->channels[row].volume, 
+				pitch_table[pitch], 
+				pan,
+				pv->limitEffect1);
+			}
 		} else if (val == 2) { // O
-			//il faut mettre current_song->channels[row].sample+1, le +1 change le sample
-			play_sound(row, 
-			current_song->channels[row].sample, 
-			current_song->channels[row].volume+55, 
-			pitch_table[pitch],
-			pan);
+			if (row == 3) {
+				play_sound(row, 
+				pv->stepping, 
+				current_song->channels[row].volume, 
+				pv->stepNoise,
+				pan,
+				pv->limitEffect1);
+			} else if (row == 4) {
+				play_sound(row, 
+				pv->notePlay, 
+				current_song->channels[row].volume, 
+				pv->octave,
+				pan,
+				pv->limitEffect1);
+			} else {
+				//il faut mettre current_song->channels[row].sample+1, le +1 change le sample
+				play_sound(row, 
+				current_song->channels[row].sample, 
+				current_song->channels[row].volume+55, 
+				pitch_table[pitch],
+				pan,
+				pv->limitEffect1);
+			}
 		}
 
 		pv++;
 	}
 }
 
+// #define tte_init_se_default_err(bgnr, bgcnt)								\
+// 	tte_init_se( bgnr, bgcnt, 0xF000, CLR_YELLOW, 0, &fwf_default, NULL)
+
+void tte_init_se_err(int bgnr, u16 bgcnt, SCR_ENTRY se0, u32 clrs, u32 bupofs, 
+	const TFont *font, fnDrawg proc) {
+
+	}
+void tte_init_con(void) {
+
+}
 
 void define_palettes(int palette_option){
 	u32 i;
 	u16 *temppointer;
 
 	temppointer = BG_PALETTE;
-	for(i=0; i<7; i++) {
-		*temppointer++ = palettes[palette_option][0][i];		
-	}
+	// for(i=0; i<7; i++) {
+		*temppointer++ = RGB8(0x01,0x01,0x51);		
+		*temppointer++ = RGB8(0x01,0x01,0x51);		
+		*temppointer++ = RGB8(0xc1,0xc1,0xc1);		
+		*temppointer++ = RGB8(0xc1,0xc1,0xc1);		
+		*temppointer++ = RGB8(0xc1,0xc1,0xc1);		
+		*temppointer++ = RGB8(0xc1,0xc1,0xc1);		
+		*temppointer++ = RGB8(0x2C,0x4F,0x8B);		
+
+		// *temppointer++ = palettes[palette_option][0][i];		
+	// }
 	temppointer = (BG_PALETTE+16);
-	for(i=0; i<7; i++) {
-		*temppointer++ = palettes[palette_option][1][i];		;
-	}
+	// for(i=0; i<7; i++) {
+		// *temppointer++ = palettes[palette_option][1][i];		;
+		*temppointer++ = RGB8(0x40,0x80,0xc0);
+		*temppointer++ = RGB8(0x40,0x80,0xc0);
+		*temppointer++ = RGB8(0xFF,0xFF,0xA0);
+		*temppointer++ = RGB8(0xFF,0xFF,0x80);
+		*temppointer++ = RGB8(0xFF,0xFF,0x50);
+		*temppointer++ = RGB8(0xDF,0xDF,0x10);
+		*temppointer++ = RGB8(0xDD,0x10,0x10);
+
+	// }
 	temppointer = (BG_PALETTE+32);
-	for(i=0; i<7; i++) {
-		*temppointer++ = palettes[palette_option][2][i];		;
-	}
+	// for(i=0; i<7; i++) {
+		//*temppointer++ = palettes[palette_option][2][i];		;
+		*temppointer++ = RGB8(0x40,0x00,0x00);
+		*temppointer++ = RGB8(0xFF,0x6F,0xc0);
+		*temppointer++ = RGB8(0xFF,0x6F,0xA0);
+		*temppointer++ = RGB8(0xFF,0x4F,0x80);
+		*temppointer++ = RGB8(0xFF,0x4F,0x50);
+		*temppointer++ = RGB8(0xDF,0x2F,0x10);
+		*temppointer++ = RGB8(0xDD,0x10,0x10);
+	// }
 	temppointer = (BG_PALETTE+48);
-		for(i=0; i<7; i++) {
-		*temppointer++ = palettes[palette_option][3][i];		;
-	}
+		// for(i=0; i<7; i++) {
+		//*temppointer++ = palettes[palette_option][3][i];		;
+		*temppointer++ = RGB8(0x40,0x80,0xc0);
+		*temppointer++ = RGB8(0x40,0x80,0xc0);
+		*temppointer++ = RGB8(0xFF,0xFF,0xA0);
+		*temppointer++ = RGB8(0xFF,0xFF,0x80);
+		*temppointer++ = RGB8(0xFF,0xFF,0x50);
+		*temppointer++ = RGB8(0xDF,0xDF,0x10);
+		*temppointer++ = RGB8(0xDD,0x10,0x10);
+	// }
+	// tte_init_se_err(0, BG_CBB(0) | BG_SBB(31), 0, CLR_ORANGE, 0, NULL, NULL);
+	// tte_init_con();
+	// pal_bg_mem[0x11]= CLR_GREEN;
 }
 
 void clear_screen(){
@@ -851,6 +1205,10 @@ void draw_cursor(){
 		if (draw_flag == 0){
 			xmod = 5+(cursor_x/4);
 			put_character('X', cursor_x+xmod, cursor_y+3, 1);
+			sprintf(string_buff, "N");
+			put_string(string_buff,26,6,0);
+			sprintf(string_buff, "P");
+			put_string(string_buff,26,7,0);
 		}
 	} else if (current_screen == SCREEN_SONG) {
 		put_character('X', 2+(cursor_x)+(cursor_x*5), cursor_y+3, 1);
@@ -871,10 +1229,58 @@ void draw_cursor(){
 void draw_cell_status(){
 	//26, 27, 28, 29
 	pattern_row *pv = &(current_song->patterns[current_pattern_index].columns[cursor_x].rows[cursor_y]);
-	
+	// sprintf(string_buff, "stepNoise %d ", pv->stepNoise);
+	// put_string(string_buff,0,0,0);
 	if (pv->volume != 0){
-		//pitch, pan, solo
-		if (pv->pitch == 0){
+		int row = cursor_y;
+		if (row == 3) { //noise gameboy
+			// if (pv->stepNoise == 255) {
+			// 	pv->stepNoise = 60;
+			// }
+			// if (pv->stepNoise == 61) {
+			// 	pv->stepNoise = 1;
+			// }
+			// if (pv->stepNoise == 0) {
+			// 	pv->stepNoise = 60;
+			// }
+			sprintf(string_buff, "N%d ", pv->stepNoise);
+			put_string(string_buff,26,3+cursor_y,0);
+		}
+		else if (row == 4) { //note gameboy
+			sprintf(string_buff, "P%d ", pv->notePlay);
+			put_string(string_buff,26,3+cursor_y,0);
+
+			if (pv->octave > 100) {
+				sprintf(string_buff, "oct:%d ", pv->octave - 256);
+				put_string(string_buff,24,15,0);
+			} else {
+				sprintf(string_buff, "oct:+%d ", pv->octave);
+				put_string(string_buff,24,15,0);
+			}
+			// if (pv->octave == 0) {
+			// 	sprintf(string_buff, "oct:0  ", pv->octave);
+			// 	put_string(string_buff,24,15,0);
+			// } else if (pv->octave > 0) {
+			// 	sprintf(string_buff, "oct:+%x", pv->octave);
+			// 	put_string(string_buff,20,15,0);
+			// } else {
+			// 	sprintf(string_buff, "oct:-%x", pv->octave);
+			// 	put_string(string_buff,20,15,0);
+			// }
+
+			// if (pv->notePlay == 0){
+			// 	put_string("  ",26,3+cursor_y,0);
+			// } 
+			// else if (pv->notePlay > 0){
+			// 	sprintf(string_buff, "+%x", pv->notePlay);
+			// 	put_string(string_buff,26,3+cursor_y,0);
+			// } else {
+			// 	sprintf(string_buff, "-%x", pv->notePlay*-1);
+			// 	put_string(string_buff,26,3+cursor_y,0);
+			// }
+		}
+		//pitch, pan, solo			
+		else if (pv->pitch == 0){
 			put_string("  ",26,3+cursor_y,0);
 		} else if (pv->pitch > 0){
 			sprintf(string_buff, "+%x", pv->pitch);
@@ -916,7 +1322,7 @@ void move_cursor(int mod_x, int mod_y){
 			put_character('-', cursor_x+xmod,cursor_y+3, 0);
 		} else if (pv->volume == 1){
 			put_character('o', cursor_x+xmod,cursor_y+3, 0);
-		} else {
+		} else if (pv->volume == 2){
 			put_character('O', cursor_x+xmod,cursor_y+3, 0);
 		}
 		
@@ -1091,15 +1497,17 @@ void draw_pattern(){
 				i++;
 			}
 
+
 			if (current_song->patterns[current_pattern_index].columns[c].rows[r].random == true) {
 				rowbuff[i] ='R';
 			} else if (current_song->patterns[current_pattern_index].columns[c].rows[r].volume == 0){
 				rowbuff[i] ='-';
 			} else if (current_song->patterns[current_pattern_index].columns[c].rows[r].volume == 1) {
 				rowbuff[i] ='o'; 
-			} else {
+			} else if (current_song->patterns[current_pattern_index].columns[c].rows[r].volume == 2) {
 				rowbuff[i] ='O';
 			}
+
 			i++; 
 		}
 		rowbuff[i] ='\0';
@@ -1761,7 +2169,8 @@ void samples_menu(int channel_index, int channel_item, int action){
 		current_song->channels[channel_index].sample, 
 		current_song->channels[channel_index].volume, 
 		pitch_table[current_song->channels[channel_index].pitch],
-		current_song->channels[channel_index].pan );
+		current_song->channels[channel_index].pan,
+		current_song->channels[channel_index].limitEffect1 );
 	}
 		
 }
@@ -1963,9 +2372,29 @@ void process_input(){
 			if (keys_held & KEY_A ) {       //depitch by 1 semitone
 				if(pv->volume > 0){
 					int mod_pitch = (pv->pitch-1) + current_song->channels[cursor_y].pitch;
-					if (mod_pitch>0){
-						pv->pitch--;
-					} 
+					int row = cursor_y;
+					if (row == 3) {
+						if (pv->stepping > 100) {
+							pv->stepping = 21;
+						}
+						if (pv->stepping < 4) {
+							pv->stepping = 21;
+						}
+						if (pv->stepNoise > 100) {
+							pv->stepNoise = 60;
+						}
+						pv->stepping--;
+						pv->stepNoise--;
+						
+					} else if (row == 4) {
+						if (pv->notePlay > 0) {
+							pv->notePlay--;
+						}
+					} else {
+						if (mod_pitch > 0){
+							pv->pitch--;
+						}
+					}
 					draw_cell_status();					
 				} 
 			} 
@@ -1992,8 +2421,28 @@ void process_input(){
 			if (keys_held & KEY_A ) {
 				if(pv->volume > 0){
 					int mod_pitch = (pv->pitch+1) + current_song->channels[cursor_y].pitch;
-					if (mod_pitch < 24){
-						pv->pitch++;
+					int row = cursor_y;
+					if (row == 3) {
+						if (pv->stepping > 15) {
+							pv->stepping = 4;
+						}
+						if (pv->stepNoise > 17) {
+							pitchN++;
+						}
+						if (pv->stepNoise > 60) {
+							pv->stepNoise = 0;
+						}
+						if (pv->stepNoise > 26) {
+							freqR = freqR + 2;
+						}
+						pv->stepping++;
+						pv->stepNoise++;
+					} else if (row == 4) {
+						pv->notePlay++;
+					} else {
+						if (mod_pitch < 24){
+							pv->pitch++;
+						}
 					}
 					draw_cell_status();
 				}
@@ -2036,17 +2485,21 @@ void process_input(){
 				}
 				pv->volume=0;
 			}
-			// alternateVol++;
-			// if (alternateVol == 4) {
-			// 	alternateVol = 0;
-			// }
+
 			draw_cell_status();
 		}
 
 		
 		if ( keys_pressed & KEY_UP ) {
 			pv = &(current_song->patterns[current_pattern_index].columns[cursor_x].rows[cursor_y]);
-			if (keys_held & KEY_A ) {
+			int row = cursor_y;
+			if (row == 4 && keys_held & KEY_A ) {
+				if (pv->octave < 6 || pv->octave >= 254) {
+					pv->octave++;
+				}
+				draw_cell_status();
+			}
+			else if (keys_held & KEY_A ) {
 				if (pv->volume == 0){
 					pv->pan = PAN_OFF;
 				} 
@@ -2082,17 +2535,27 @@ void process_input(){
 		
 		if ( keys_pressed & KEY_DOWN ) {
 			pv = &(current_song->patterns[current_pattern_index].columns[cursor_x].rows[cursor_y]);			
-			if (keys_held & KEY_B ) {
+			int row = cursor_y;
+			if (row == 4 && keys_held & KEY_A ) {
+				if (pv->octave > 254 || pv->octave < 10) {
+					pv->octave--;
+				}
+				// sprintf(string_buff, "tat %d", pv->octave);
+				// put_string(string_buff,20,16,0);
+				draw_cell_status();
+			}
+			else if (keys_held & KEY_B ) {
 				
 				current_song->bpm = current_song->bpm - 10;
 				draw_bpm_pattern();
 
-			} else if (keys_held & KEY_A ) {
-				if (pv->volume > 0){
-					pv->volume--;
-				}
-				draw_cell_status();
-			} else if (keys_held & KEY_SELECT ) {
+			} 
+			// else if (keys_held & KEY_A ) {
+			// 	if (pv->volume > 0){
+			// 		pv->volume--;
+			// 	}
+			// 	draw_cell_status();
+			else if (keys_held & KEY_SELECT ) {
 				int i;
 				if (current_song->channels[cursor_y].status != SOLOED){
 				//SOLO/UNSOLO CHANNEL
@@ -2525,8 +2988,26 @@ void setup_display(){
 	CpuFastSet( MAP_BASE_ADR(31), MAP_BASE_ADR(31), FILL | COPY32 | (0x800/4));
 }
 
-
 int main() {
+
+	//son gameboy
+	// turn sound on
+	REG_SNDSTAT= SSTAT_ENABLE;
+// snd1 on left/right ; both full volume
+	REG_SNDDMGCNT = SDMG_BUILD_LR(SDMG_SQR1, 7);
+	// DMG ratio to 100%
+	REG_SNDDSCNT= SDS_DMG100;
+
+	// no sweep
+	REG_SND1SWEEP= SSW_OFF;
+	// envelope: vol=12, decay, max step time (7) ; 50% duty
+	//REG_SND1CNT= SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
+	//REG_SND1FREQ= 0;
+
+	REG_SND4CNT= SSQR_ENV_BUILD(12, 0, 7) | SSQR_DUTY1_2;
+	REG_SND4FREQ= 0;
+	//fin son gameboy
+
 	current_song = (song *) malloc(sizeof(song));
 	init_song();
 	
