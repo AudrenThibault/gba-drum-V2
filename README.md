@@ -1,5 +1,8 @@
 # gba-drum
 
+## the project is currently abandonned because I didn't succeed have both pulse/noise channel sounds from the gba and samples and that was my reason to work on this project. That's why the actual version is on nintendo ds, whith only samples but many more options :
+https://github.com/AudrenThibault/root-drum-machine
+
 ## Build :
 There must be wav files inside maxmod_data for compilation works
 make clean
